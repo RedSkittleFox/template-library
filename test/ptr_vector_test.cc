@@ -37,6 +37,7 @@ class ptr_vector_test<fox::ptr_vector<T, Allocator>> : public testing::Test
 public:
 	static inline thread_local std::mt19937 random_engine;
 	using ptr_vector = fox::ptr_vector<T, Allocator>;
+	using initializer_list = std::initializer_list<T>;
 
 	std::vector<tracking_pointer<int>> tracker;
 
@@ -212,7 +213,7 @@ TYPED_TEST(ptr_vector_test, initializer_list_assign_operator)
 {
 	using ptr_vector = typename TestFixture::ptr_vector;
 
-	std::initializer_list v{ this->to_value(4), this->to_value(5) };
+	typename TestFixture::initializer_list v{ this->to_value(4), this->to_value(5) };
 	ptr_vector u{ this->to_value(1) };
 	u = v;
 
@@ -269,9 +270,10 @@ TYPED_TEST(ptr_vector_test, assign_initializer_list)
 TYPED_TEST(ptr_vector_test, assign_range)
 {
 	using ptr_vector = typename TestFixture::ptr_vector;
+	using initializer_list = typename TestFixture::initializer_list;
 
 	ptr_vector u{ this->to_value(1), this->to_value(2), this->to_value(3) };
-	u.assign_range(std::initializer_list{ this->to_value(4), this->to_value(5) });
+	u.assign_range(initializer_list{ this->to_value(4), this->to_value(5) });
 
 	EXPECT_FALSE(u.empty());
 	EXPECT_EQ(u.size(), 2);
@@ -457,9 +459,11 @@ TYPED_TEST(ptr_vector_test, insert_splat)
 TYPED_TEST(ptr_vector_test, insert_iterator_pair)
 {
 	using ptr_vector = typename TestFixture::ptr_vector;
+	using initializer_list = typename TestFixture::initializer_list;
+
 	ptr_vector u{ this->to_value(1), this->to_value(2), this->to_value(3) };
 
-	std::initializer_list il{ this->to_value(4), this->to_value(5) };
+	initializer_list il{ this->to_value(4), this->to_value(5) };
 	auto it = u.insert(std::begin(u) + 1, std::begin(il), std::end(il));
 
 	EXPECT_EQ(u.size(), 5);
@@ -475,9 +479,11 @@ TYPED_TEST(ptr_vector_test, insert_iterator_pair)
 TYPED_TEST(ptr_vector_test, insert_initializer_list)
 {
 	using ptr_vector = typename TestFixture::ptr_vector;
+	using initializer_list = typename TestFixture::initializer_list;
+
 	ptr_vector u{ this->to_value(1), this->to_value(2), this->to_value(3) };
 
-	std::initializer_list il{ this->to_value(4), this->to_value(5) };
+	initializer_list il{ this->to_value(4), this->to_value(5) };
 	auto it = u.insert(std::begin(u) + 1, il);
 
 	EXPECT_EQ(u.size(), 5);
@@ -493,9 +499,11 @@ TYPED_TEST(ptr_vector_test, insert_initializer_list)
 TYPED_TEST(ptr_vector_test, insert_range)
 {
 	using ptr_vector = typename TestFixture::ptr_vector;
+	using initializer_list = typename TestFixture::initializer_list;
+
 	ptr_vector u{ this->to_value(1), this->to_value(2), this->to_value(3) };
 
-	std::initializer_list il{ this->to_value(4), this->to_value(5) };
+	initializer_list il{ this->to_value(4), this->to_value(5) };
 	auto it = u.insert_range(std::begin(u) + 1, il);
 
 	EXPECT_EQ(u.size(), 5);
@@ -511,6 +519,7 @@ TYPED_TEST(ptr_vector_test, insert_range)
 TYPED_TEST(ptr_vector_test, emplace)
 {
 	using ptr_vector = typename TestFixture::ptr_vector;
+
 	ptr_vector u{ this->to_value(1), this->to_value(2), this->to_value(3) };
 
 	auto v = this->to_value(4);
@@ -604,9 +613,11 @@ TYPED_TEST(ptr_vector_test, emplace_back)
 TYPED_TEST(ptr_vector_test, append_range)
 {
 	using ptr_vector = typename TestFixture::ptr_vector;
+	using initializer_list = typename TestFixture::initializer_list;
+
 	ptr_vector u{ this->to_value(1), this->to_value(2), this->to_value(3) };
 
-	std::initializer_list il{ this->to_value(4), this->to_value(5) };
+	initializer_list il{ this->to_value(4), this->to_value(5) };
 	u.append_range(il);
 
 	EXPECT_EQ(u.size(), 5);
