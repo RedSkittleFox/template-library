@@ -23,7 +23,11 @@ This is a C++ 23 library.
 ```cmake
 include(FetchContent)
 
-FetchContent_Declare(fox_template_library GIT_REPOSITORY https://github.com/RedSkittleFox/template-library.git)
+FetchContent_Declare(fox_template_library 
+    GIT_REPOSITORY https://github.com/RedSkittleFox/template-library.git
+    GIT_TAG main
+)
+
 FetchContent_MakeAvailable(fox_template_library)
 target_link_libraries(foo PRIVATE fox::template_library)
 ```
