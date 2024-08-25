@@ -67,10 +67,11 @@ namespace fox::iterator
 			return *this;
 		}
 
-		[[nodiscard]] constexpr indirect_iterator operator++(int) const
+		[[nodiscard]] constexpr indirect_iterator operator++(int)
 		{
 			auto copy = current;
-			return indirect_iterator(++copy);
+			++(*this);
+			return indirect_iterator(copy);
 		}
 
 	public: // Bidirectional Iterator
@@ -81,11 +82,12 @@ namespace fox::iterator
 			return *this;
 		}
 
-		[[nodiscard]] constexpr indirect_iterator operator--(int) const
+		[[nodiscard]] constexpr indirect_iterator operator--(int)
 			requires (std::bidirectional_iterator<iterator_type>)
 		{
 			auto copy = current;
-			return indirect_iterator(--copy);
+			--(*this);
+			return indirect_iterator(copy);
 		}
 
 	public: // Random Access Iterator
