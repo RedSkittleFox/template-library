@@ -23,6 +23,7 @@ set(sources
     "${CMAKE_CURRENT_SOURCE_DIR}/inplace_free_list_test.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/free_list_test.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/ptr_vector_test.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/intrusive_list_test.cc"
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${sources})
