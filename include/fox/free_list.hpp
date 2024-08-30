@@ -93,14 +93,98 @@ namespace fox
 		}
 
 	public:
+
 		void clear()
 		{
 			chunks_.clear();
 		}
 
-		void optimize()
+		template<std::invocable<pointer, pointer> Callback>
+		void optimize(Callback&& cb)
 		{
+			optimize_at([&](size_type from, size_type to) { 
+				cb(this->operator[](from), this->operator[](to)); 
+			});
+		}
 
+		template<std::invocable<size_type, size_type> Callback>
+		void optimize_at(Callback&& cb)
+		{
+			std::uint16_t chunk_i = 0;
+			std::uint16_t chunk_j = static_cast<std::uint16_t>(chunks_.size() - 1);
+			while (chunk_i <= chunk_j && chunk_j > 0) 
+			{
+				if (chunks_[chunk_i].size() == ChunkCapacity) 
+				{
+					chunk_i++;
+					continue;
+				}
+				
+				chunks_[chunk_i].sort();
+
+				if (chunk_i == chunk_j) 
+				{
+					chunks_[chunk_i].optimize_at([&](std::uint16_t from, std::uint16_t to) {
+						cb(pack_index(chunk_i, from), pack_index(chunk_i, to)); 
+					});
+					break;
+				}
+				else
+				{
+					for (std::uint16_t idx = 0; idx < ChunkCapacity; idx++) 
+					{
+						std::uint16_t rev_idx = ChunkCapacity - idx - 1;
+
+						if (chunks_[chunk_j].holds_value_at(rev_idx) && !chunks_[chunk_i].full()) 
+						{
+							
+							const T* source = chunks_[chunk_j].at(rev_idx);
+							size_type packed_from = pack_index(chunk_j, rev_idx);
+
+							const T* dest = chunks_[chunk_i].emplace(*source);
+							std::uint16_t dest_idx = static_cast<std::uint16_t>(chunks_[chunk_i].as_index(dest));
+							size_type packed_to = pack_index(chunk_i, dest_idx);
+
+							chunks_[chunk_j].erase(source);
+
+							cb(packed_from, packed_to);
+						}
+					}
+
+					if (chunks_[chunk_i].full())
+						chunk_i++;
+
+					if (chunks_[chunk_j].empty())
+						chunk_j--;
+
+				}
+			}
+			shrink();
+		}
+
+		void shrink() {
+			while (chunks_.back().empty()) {
+				chunks_.pop_back();
+			}
+			chunks_.shrink_to_fit();
+		}
+
+		void sort() {
+			for (auto& chunk : chunks_) 
+			{
+				chunk.sort();
+			}
+		}
+
+		[[nodiscard]] bool is_sorted() const noexcept 
+		{
+			bool is_sorted_ = true;
+			for (auto& chunk : chunks_) 
+			{
+				is_sorted_ = is_sorted_ && chunk.is_sorted();
+				if (!is_sorted_) break;
+			}
+			return is_sorted_;
 		}
 
 		template<class... Args>
@@ -109,7 +193,7 @@ namespace fox
 			chunk_type* allocation_chunk;
 
 			// Find first free
-			if(auto r = std::find_if(std::begin(chunks_), std::end(chunks_), [](const auto& v) { return v.full() == false; });
+			if (auto r = std::find_if(std::begin(chunks_), std::end(chunks_), [](const auto& v) { return v.full() == false; });
 				r != std::end(chunks_))
 			{
 				allocation_chunk = std::addressof(*r);
@@ -130,6 +214,20 @@ namespace fox
 		[[nodiscard]] T* insert(T&& value) requires(std::is_move_constructible_v<T>)
 		{
 			return this->emplace(std::forward<T&&>(value));
+		}
+
+		[[nodiscard]] size_type first_free_index()
+		{
+			size_type out = std::numeric_limits<size_type>::max();
+			// Find first free
+			if (auto r = std::find_if(std::begin(chunks_), std::end(chunks_), [](const auto& v) { return v.full() == false; });
+				r != std::end(chunks_))
+			{
+				std::uint16_t position = (*r).first_free_offset();
+				out = (static_cast<size_type>(std::distance(std::begin(chunks_), r)) << (sizeof(position) * 8)) | static_cast<size_type>(position);
+			}
+			
+			return out;
 		}
 
 	public:
