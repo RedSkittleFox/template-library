@@ -155,7 +155,7 @@ TYPED_TEST(indirect_iterator_test, forward_iterator_postfix_incrementable)
 	auto it = this->begin_indirect();
 	EXPECT_EQ(*it, 1);
 	EXPECT_EQ(*(it++) = 2, 2);
-	EXPECT_EQ(*it, 1);
+	EXPECT_EQ(*it, 2);
 }
 
 TYPED_TEST(indirect_iterator_test, bidirectional_iterator_assert)
@@ -181,7 +181,7 @@ TYPED_TEST(indirect_iterator_test, bidirectional_iterator_postfix_decrementable)
 		auto it = --this->end_indirect();
 		EXPECT_EQ(*it, 4);
 		EXPECT_EQ(*(it--) = 3, 3);
-		EXPECT_EQ(*it, 4);
+		EXPECT_EQ(*it, 3);
 	}
 }
 
