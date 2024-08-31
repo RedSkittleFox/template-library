@@ -515,7 +515,6 @@ TYPED_TEST(free_list_test, raii)
 
 TYPED_TEST(free_list_test, optimize_at) 
 {
-	using type = typename TestFixture::free_list::value_type;
 	using free_list = typename TestFixture::free_list;
 	free_list v;
 	std::map<std::size_t, typename free_list::value_type> expected;
