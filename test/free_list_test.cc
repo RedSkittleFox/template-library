@@ -134,6 +134,26 @@ TYPED_TEST(free_list_test, copy_constructor)
 	}
 }
 
+TYPED_TEST(free_list_test, transform_constructor)
+{
+	using free_list = typename TestFixture::free_list;
+
+	free_list from;
+	std::map<std::size_t, typename free_list::value_type> expected;
+
+	TestFixture::fill_random_diffuse(expected, from);
+
+	free_list to(from, [](const typename free_list::value_type& v) { return v; });
+
+	EXPECT_EQ(std::size(expected), from.size());
+
+	for (const auto& e : expected)
+	{
+		EXPECT_TRUE(to.holds_value_at(e.first));
+		EXPECT_EQ(e.second, *to.at(e.first));
+	}
+}
+
 TYPED_TEST(free_list_test, move_constructor)
 {
 	using free_list = typename TestFixture::free_list;
@@ -214,6 +234,27 @@ TYPED_TEST(free_list_test, destructor)
 
 	EXPECT_FALSE(v.empty());
 	EXPECT_EQ(v.size(), 1);
+}
+
+TYPED_TEST(free_list_test, assign_range)
+{
+	using free_list = typename TestFixture::free_list;
+
+	free_list from;
+	std::map<std::size_t, typename free_list::value_type> expected;
+
+	TestFixture::fill_random_diffuse(expected, from);
+
+	free_list to;
+	to.assign(from, [](const typename free_list::value_type& v) { return v; });
+
+	EXPECT_EQ(std::size(expected), from.size());
+
+	for (const auto& e : expected)
+	{
+		EXPECT_TRUE(to.holds_value_at(e.first));
+		EXPECT_EQ(e.second, *to.at(e.first));
+	}
 }
 
 TYPED_TEST(free_list_test, insert_copy_erase)
