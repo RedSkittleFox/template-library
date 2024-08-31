@@ -12,6 +12,9 @@ namespace fox
 	template<class T, std::size_t ChunkCapacity, class Allocator = std::allocator<T>>
 	class free_list
 	{
+		template<class, std::size_t, class>
+		friend class free_list;
+
 	public:
 		using value_type = T;
 		using chunk_type = inplace_free_list<T, ChunkCapacity>;
@@ -57,8 +60,9 @@ namespace fox
 
 		free_list(const free_list& other) = default;
 
-		template<std::convertible_to<T> U, class OtherAllocator, class TransformFunc>
+		template<class U, class OtherAllocator, class TransformFunc>
 		free_list(const free_list<U, ChunkCapacity, OtherAllocator>& other, TransformFunc func)
+			requires (std::is_invocable_r_v<T, TransformFunc, const U&>)
 		{
 			this->assign(other, std::move(func));
 		}
@@ -100,7 +104,7 @@ namespace fox
 		}
 
 	public:
-		template<std::convertible_to<T> U, class OtherAllocator, class TransformFunc>
+		template<class U, class OtherAllocator, class TransformFunc>
 		void assign(const free_list<U, ChunkCapacity, OtherAllocator>& other, TransformFunc func)
 			requires (std::is_invocable_r_v<T, TransformFunc, const U&>)
 		{
