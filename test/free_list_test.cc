@@ -472,7 +472,7 @@ TYPED_TEST(free_list_test, raii)
 			}
 		}
 
-		EXPECT_EQ(u.use_count(), v.size() + expected.size() + 1);
+		EXPECT_EQ(u.use_count(), v.size() + expected.size() + static_cast<std::size_t>(1));
 	}
 
 	EXPECT_EQ(u.use_count(), 1);

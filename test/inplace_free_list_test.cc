@@ -518,7 +518,7 @@ TYPED_TEST(inplace_free_list_test, raii)
 			}
 		}
 
-		EXPECT_EQ(u.use_count(), v.size() + expected.size() + 1);
+		EXPECT_EQ(u.use_count(), v.size() + expected.size() + static_cast<std::size_t>(1));
 	}
 
 	EXPECT_EQ(u.use_count(), 1);
@@ -541,7 +541,7 @@ TYPED_TEST(inplace_free_list_test, optimize_at)
 	inplace_free_list v;
 	std::map<std::size_t, typename inplace_free_list::value_type> expected;
 	TestFixture::fill_random_diffuse(expected, v);
-	auto cb = [&](inplace_free_list::offset_type from, inplace_free_list::offset_type to) {
+	auto cb = [&](inplace_free_list::size_type from, inplace_free_list::size_type to) {
 		auto e = std::make_pair(to,(*expected.find(from)).second);
 		e.first = to;
 		expected.erase(from);

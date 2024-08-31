@@ -13,8 +13,6 @@ namespace fox
 	template<class T, std::size_t Capacity>
 	class inplace_free_list
 	{
-
-	public:
 		// Type used to implement in place free list
 		using offset_type = std::conditional_t<
 			sizeof(T) == 1,
@@ -151,10 +149,10 @@ namespace fox
 		template<std::invocable<pointer, pointer> Callback>
 		void optimize(Callback&& cb)
 		{
-			optimize_at([&](offset_type from, offset_type to) { cb(this->data() + from, this->data() + to); });
+			optimize_at([&](size_type from, size_type to) { cb(this->data() + from, this->data() + to); });
 		}
 
-		template<std::invocable<offset_type, offset_type> Callback>
+		template<std::invocable<size_type, size_type> Callback>
 		void optimize_at(Callback&& cb)
 		{
 			std::bitset<Capacity> mask = free_mask();
