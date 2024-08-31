@@ -113,17 +113,16 @@ namespace fox
 			return first_free_ == offset_type_npos;
 		}
 
-		[[nodiscard]] bool is_sorted() const noexcept
+		[[nodiscard]] bool is_free_list_sorted() const
 		{
 			offset_type current = first_free_;
-			bool is_sorted_ = true;
-			while (current != offset_type_npos && is_sorted_) 
+			while (current != offset_type_npos)
 			{
 				offset_type next = reinterpret_cast<const offset_accessor*>(std::data(storage_))[current].offset;
-				is_sorted_ = is_sorted_ && (next > current);
+				if (next <= current) return false;
 				current = next;
 			}
-			return is_sorted_;
+			return true;
 		}
 
 	public:
@@ -182,8 +181,10 @@ namespace fox
 					}
 
 				}
-				else 
+				else
+				{
 					left++;
+				}
 			}
 
 			if (right >= 0 && mask.test(right)) 
@@ -198,7 +199,7 @@ namespace fox
 			}
 		}
 		
-		void sort() {
+		void sort_free_list() {
 			std::bitset<Capacity> mask = free_mask();
 			offset_type next_offset = offset_type_npos;
 			for (offset_type idx = 0; idx < Capacity; idx++) 

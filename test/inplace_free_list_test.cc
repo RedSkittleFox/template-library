@@ -530,8 +530,9 @@ TYPED_TEST(inplace_free_list_test, sort)
 	inplace_free_list v;
 	std::map<std::size_t, typename inplace_free_list::value_type> expected;
     TestFixture::fill_random_diffuse(expected, v);
-	v.sort();
-	EXPECT_TRUE(v.is_sorted());
+	EXPECT_FALSE(v.is_free_list_sorted());
+	v.sort_free_list();
+	EXPECT_TRUE(v.is_free_list_sorted());
 }
 
 TYPED_TEST(inplace_free_list_test, optimize_at)

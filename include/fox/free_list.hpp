@@ -125,7 +125,7 @@ namespace fox
 					continue;
 				}
 				
-				chunks_[chunk_i].sort();
+				chunks_[chunk_i].sort_free_list();
 
 				if (chunk_i == chunk_j) 
 				{
@@ -181,15 +181,15 @@ namespace fox
 			}
 		}
 
-		[[nodiscard]] bool is_sorted() const noexcept 
+		[[nodiscard]] bool is_sorted() const noexcept
 		{
-			bool is_sorted_ = true;
+			bool is_sorted = true;
 			for (auto& chunk : chunks_) 
 			{
-				is_sorted_ = is_sorted_ && chunk.is_sorted();
-				if (!is_sorted_) break;
+				is_sorted = is_sorted && chunk.is_sorted();
+				if (!is_sorted) break;
 			}
-			return is_sorted_;
+			return is_sorted;
 		}
 
 		template<class... Args>
@@ -219,20 +219,6 @@ namespace fox
 		[[nodiscard]] T* insert(T&& value) requires(std::is_move_constructible_v<T>)
 		{
 			return this->emplace(std::forward<T&&>(value));
-		}
-
-		[[nodiscard]] size_type first_free_index()
-		{
-			size_type out = std::numeric_limits<size_type>::max();
-			// Find first free
-			if (auto r = std::find_if(std::begin(chunks_), std::end(chunks_), [](const auto& v) { return v.full() == false; });
-				r != std::end(chunks_))
-			{
-				std::uint16_t position = (*r).first_free_offset();
-				out = (static_cast<size_type>(std::distance(std::begin(chunks_), r)) << (sizeof(position) * 8)) | static_cast<size_type>(position);
-			}
-			
-			return out;
 		}
 
 	public:
