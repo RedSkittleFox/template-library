@@ -478,7 +478,8 @@ TYPED_TEST(free_list_test, raii)
 	EXPECT_EQ(u.use_count(), 1);
 }
 
-TYPED_TEST(free_list_test, optimize_at) {
+TYPED_TEST(free_list_test, optimize_at) 
+{
 	using type = typename TestFixture::free_list::value_type;
 	using free_list = typename TestFixture::free_list;
 	free_list v;
@@ -491,13 +492,15 @@ TYPED_TEST(free_list_test, optimize_at) {
 		expected.insert(e);
 	};
 	v.optimize_at(cb);
-	for (auto e : expected) {
+	for (auto e : expected) 
+	{
 		EXPECT_TRUE(v.holds_value_at(e.first));
 		EXPECT_EQ(e.second, *v.at(e.first));
 	}
 }
 
-TYPED_TEST(free_list_test, optimize) {
+TYPED_TEST(free_list_test, optimize) 
+{
 	using type = typename TestFixture::free_list::value_type;
 	using free_list = typename TestFixture::free_list;
 	free_list v;

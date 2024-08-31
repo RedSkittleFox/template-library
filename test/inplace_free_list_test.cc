@@ -571,7 +571,8 @@ TYPED_TEST(inplace_free_list_test, optimize)
 
 	v.optimize(cb);
 
-	for (auto e : expected) {
+	for (auto e : expected) 
+	{
 		EXPECT_TRUE(v.holds_value(e.first));
 		EXPECT_EQ(e.second, *(e.first));
 	}

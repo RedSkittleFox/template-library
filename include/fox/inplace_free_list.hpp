@@ -13,6 +13,8 @@ namespace fox
 	template<class T, std::size_t Capacity>
 	class inplace_free_list
 	{
+
+	public:
 		// Type used to implement in place free list
 		using offset_type = std::conditional_t<
 			sizeof(T) == 1,
@@ -22,7 +24,8 @@ namespace fox
 
 		static constexpr offset_type offset_type_npos = std::numeric_limits<offset_type>::max();
 		static_assert(Capacity < offset_type_npos);
-
+	
+	private:
 		alignas(alignof(T)) std::array<std::uint8_t, Capacity * sizeof(T)> storage_;
 		offset_type first_free_;
 		std::size_t size_;
