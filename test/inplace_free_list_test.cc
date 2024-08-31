@@ -175,6 +175,26 @@ TYPED_TEST(inplace_free_list_test, copy_constructor)
 	}
 }
 
+TYPED_TEST(inplace_free_list_test, transform_constructor)
+{
+	using inplace_free_list = typename TestFixture::inplace_free_list;
+
+	inplace_free_list from;
+	std::map<std::size_t, typename inplace_free_list::value_type> expected;
+
+	TestFixture::fill_random_diffuse(expected, from);
+
+	inplace_free_list to(from, [](const typename inplace_free_list::value_type& v) { return v; });
+
+	EXPECT_EQ(from.size(), from.size());
+
+	for (const auto& e : expected)
+	{
+		EXPECT_TRUE(to.holds_value_at(e.first));
+		EXPECT_EQ(e.second, *to.at(e.first));
+	}
+}
+
 TYPED_TEST(inplace_free_list_test, move_constructor)
 {
 	using inplace_free_list = typename TestFixture::inplace_free_list;
@@ -270,6 +290,27 @@ TYPED_TEST(inplace_free_list_test, destructor)
 
 	EXPECT_FALSE(v.empty());
 	EXPECT_EQ(v.size(), 1);
+}
+
+TYPED_TEST(inplace_free_list_test, assign_transform)
+{
+	using inplace_free_list = typename TestFixture::inplace_free_list;
+
+	inplace_free_list from;
+	std::map<std::size_t, typename inplace_free_list::value_type> expected;
+
+	TestFixture::fill_random_diffuse(expected, from);
+
+	inplace_free_list to;
+	to.assign(from, [](const typename inplace_free_list::value_type& v) { return v; });
+
+	EXPECT_EQ(from.size(), from.size());
+
+	for (const auto& e : expected)
+	{
+		EXPECT_TRUE(to.holds_value_at(e.first));
+		EXPECT_EQ(e.second, *to.at(e.first));
+	}
 }
 
 TYPED_TEST(inplace_free_list_test, insert_copy_erase)
@@ -494,7 +535,6 @@ TYPED_TEST(inplace_free_list_test, emplace_erase_multiple)
 		}
 	}
 }
-
 
 TYPED_TEST(inplace_free_list_test, raii)
 {

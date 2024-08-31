@@ -56,6 +56,13 @@ namespace fox
 			: chunks_(static_cast<chunk_allocator>(allocator)) {}
 
 		free_list(const free_list& other) = default;
+
+		template<std::convertible_to<T> U, class OtherAllocator, class TransformFunc>
+		free_list(const free_list<U, ChunkCapacity, OtherAllocator>& other, TransformFunc func)
+		{
+			this->assign(other, std::move(func));
+		}
+
 		free_list(free_list&& other) noexcept = default;
 		free_list& operator=(const free_list& other) = default;
 		free_list& operator=(free_list&& other) noexcept = default;
@@ -90,6 +97,21 @@ namespace fox
 		[[nodiscard]] bool empty() const noexcept
 		{
 			return size() == static_cast<size_type>(0);
+		}
+
+	public:
+		template<std::convertible_to<T> U, class OtherAllocator, class TransformFunc>
+		void assign(const free_list<U, ChunkCapacity, OtherAllocator>& other, TransformFunc func)
+			requires (std::is_invocable_r_v<T, TransformFunc, const U&>)
+		{
+			this->clear();
+
+			chunks_.resize(other.chunks_.size());
+
+			for(std::size_t i{}; i < std::size(chunks_); ++i)
+			{
+				chunks_[i].assign(other.chunks_[i], func);
+			}
 		}
 
 	public:

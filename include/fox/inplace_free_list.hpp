@@ -61,6 +61,13 @@ namespace fox
 			initialize_copy(other);
 		}
 
+		template<std::convertible_to<T> U, class TransformFunc>
+		inplace_free_list(const inplace_free_list<U, Capacity>& other, TransformFunc&& func)
+			requires (std::is_invocable_r_v<T, TransformFunc, const U&>)
+		{
+			initialize_transform(other, std::forward<TransformFunc>(func));
+		}
+
 		inplace_free_list(inplace_free_list&& other) noexcept
 		{
 			initialize_move(other);
@@ -85,6 +92,15 @@ namespace fox
 		~inplace_free_list()
 		{
 			destroy_all();
+		}
+
+	public:
+		template<std::convertible_to<T> U, class TransformFunc>
+		void assign(const inplace_free_list<U, Capacity>& other, TransformFunc&& func)
+			requires (std::is_invocable_r_v<T, TransformFunc, const U&>)
+		{
+			destroy_all();
+			initialize_transform(other, std::forward<TransformFunc>(func));
 		}
 
 	public:
@@ -377,6 +393,41 @@ namespace fox
 						std::construct_at(
 							reinterpret_cast<T*>(begin + i),
 							*reinterpret_cast<const T*>(other_begin + i)
+						);
+					}
+				}
+			}
+		}
+
+		template<class U, class Func>
+		void initialize_transform(const inplace_free_list<U, Capacity>& other, Func&& func)
+		{
+			first_free_ = other.first_free_;
+			size_ = other.size_;
+
+			if constexpr (std::is_trivially_copy_constructible_v<T>)
+			{
+				storage_ = other.storage_;
+			}
+			else
+			{
+				std::bitset<Capacity> mask;
+				const offset_accessor* other_begin = reinterpret_cast<const offset_accessor*>(std::data(other.storage_));
+				offset_accessor* begin = reinterpret_cast<offset_accessor*>(std::data(storage_));
+
+				for (offset_type i = first_free_; i != offset_type_npos; i = other_begin[i].offset)
+				{
+					mask.set(i);
+					std::construct_at(begin + i, other_begin[i]);
+				}
+
+				for (std::size_t i{}; i < std::size(mask); ++i)
+				{
+					if (mask.test(i) == false)
+					{
+						std::construct_at(
+							reinterpret_cast<T*>(begin + i),
+							func(*reinterpret_cast<const U*>(other_begin + i))
 						);
 					}
 				}
