@@ -168,7 +168,8 @@ namespace fox
 		}
 
 		void shrink() {
-			while (chunks_.back().empty()) {
+			while (chunks_.back().empty()) 
+			{
 				chunks_.pop_back();
 			}
 			chunks_.shrink_to_fit();
