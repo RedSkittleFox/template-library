@@ -22,8 +22,7 @@ namespace fox
 
 		static constexpr offset_type offset_type_npos = std::numeric_limits<offset_type>::max();
 		static_assert(Capacity < offset_type_npos);
-	
-	private:
+
 		alignas(alignof(T)) std::array<std::uint8_t, Capacity * sizeof(T)> storage_;
 		offset_type first_free_;
 		std::size_t size_;

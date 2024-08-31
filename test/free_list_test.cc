@@ -127,12 +127,6 @@ public:
 			actual.erase(actual.at(idx));
 		}
 	}
-
-	
-
-	bool is_sorted(free_list& list) {
-		
-	}
 };
 
 using free_list_test_types =
