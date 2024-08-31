@@ -532,6 +532,13 @@ TYPED_TEST(free_list_test, optimize_at)
 		EXPECT_TRUE(v.holds_value_at(e.first));
 		EXPECT_EQ(e.second, *v.at(e.first));
 	}
+
+	for (auto it = v.chunks_begin(); it != v.chunks_end(); it += 1)
+	{
+		EXPECT_TRUE(it->size() != 0);
+	}
+
+	EXPECT_TRUE(v.is_packed());
 }
 
 TYPED_TEST(free_list_test, optimize) 
@@ -547,9 +554,19 @@ TYPED_TEST(free_list_test, optimize)
 		expected.erase(from);
 		expected.insert(e);
 	};
+
 	v.optimize(cb);
-	for (auto e : expected) {
+	
+	for (auto e : expected) 
+	{
 		EXPECT_TRUE(v.holds_value(e.first));
 		EXPECT_EQ(e.second, *(e.first));
 	}
+
+	for (auto it = v.chunks_begin(); it != v.chunks_end(); it += 1) 
+	{
+		EXPECT_TRUE(it->size() != 0);
+	}
+
+	EXPECT_TRUE(v.is_packed());
 }

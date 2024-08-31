@@ -206,13 +206,20 @@ namespace fox
 
 		[[nodiscard]] bool is_sorted() const noexcept
 		{
-			bool is_sorted = true;
-			for (auto& chunk : chunks_) 
+			for (auto& chunk : chunks_)
 			{
-				is_sorted = is_sorted && chunk.is_sorted();
-				if (!is_sorted) break;
+				if (!chunk.is_sorted()) return false;
 			}
-			return is_sorted;
+			return true;
+		}
+
+		bool is_packed()
+		{
+			for (auto& chunk : chunks_)
+			{
+				if (!chunk.is_packed()) return false;
+			}
+			return true;
 		}
 
 		template<class... Args>

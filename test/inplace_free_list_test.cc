@@ -590,10 +590,13 @@ TYPED_TEST(inplace_free_list_test, optimize_at)
 
 	v.optimize_at(cb);
 
-	for (auto e : expected) {
+	for (auto e : expected) 
+	{
 		EXPECT_TRUE(v.holds_value_at(e.first));
 		EXPECT_EQ(e.second, *v.at(e.first));
 	}
+
+	EXPECT_TRUE(v.is_packed());
 }
 
 TYPED_TEST(inplace_free_list_test, optimize)
@@ -616,4 +619,6 @@ TYPED_TEST(inplace_free_list_test, optimize)
 		EXPECT_TRUE(v.holds_value(e.first));
 		EXPECT_EQ(e.second, *(e.first));
 	}
+
+	EXPECT_TRUE(v.is_packed());
 }

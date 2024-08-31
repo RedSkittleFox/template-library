@@ -229,6 +229,19 @@ namespace fox
 			}
 			first_free_ = next_offset;
 		}
+
+
+		bool is_packed()
+		{
+			auto mask = free_mask();
+			std::size_t i = 0;
+			for (; i < mask.size(); ++i)
+			{
+				if (mask.test(i)) break;
+			}
+			return i == this->size();
+		}
+
 	public:
 		template<class... Args>
 		[[nodiscard]] T* emplace(Args&&... args) requires (std::constructible_from<T, Args...>)
