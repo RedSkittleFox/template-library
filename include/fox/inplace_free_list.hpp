@@ -320,17 +320,19 @@ namespace fox
 		template<class U, class Func>
 		void initialize_transform(const inplace_free_list<U, Capacity>& other, Func&& func)
 		{
+			using other_offset_accessor = const typename inplace_free_list<U, Capacity>::offset_accessor;
+
 			first_free_ = other.first_free_;
 			size_ = other.size_;
 
 			std::bitset<Capacity> mask;
-			const offset_accessor* other_begin = reinterpret_cast<const offset_accessor*>(std::data(other.storage_));
+			const other_offset_accessor* other_begin = reinterpret_cast<const other_offset_accessor*>(std::data(other.storage_));
 			offset_accessor* begin = reinterpret_cast<offset_accessor*>(std::data(storage_));
 
 			for (offset_type i = first_free_; i != offset_type_npos; i = other_begin[i].offset)
 			{
 				mask.set(i);
-				std::construct_at(begin + i, other_begin[i]);
+				std::construct_at(begin + i, *reinterpret_cast<const offset_accessor*>(other_begin + i));
 			}
 
 			for (std::size_t i{}; i < std::size(mask); ++i)
