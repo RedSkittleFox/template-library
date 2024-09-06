@@ -13,6 +13,9 @@ namespace fox
 	template<class T, std::size_t Capacity>
 	class inplace_free_list
 	{
+		template<class, std::size_t>
+		friend class inplace_free_list;
+
 		// Type used to implement in place free list
 		using offset_type = std::conditional_t<
 			sizeof(T) == 1,
@@ -61,7 +64,7 @@ namespace fox
 			initialize_copy(other);
 		}
 
-		template<std::convertible_to<T> U, class TransformFunc>
+		template<class U, class TransformFunc>
 		inplace_free_list(const inplace_free_list<U, Capacity>& other, TransformFunc&& func)
 			requires (std::is_invocable_r_v<T, TransformFunc, const U&>)
 		{
@@ -95,7 +98,7 @@ namespace fox
 		}
 
 	public:
-		template<std::convertible_to<T> U, class TransformFunc>
+		template<class U, class TransformFunc>
 		void assign(const inplace_free_list<U, Capacity>& other, TransformFunc&& func)
 			requires (std::is_invocable_r_v<T, TransformFunc, const U&>)
 		{
@@ -415,34 +418,29 @@ namespace fox
 		template<class U, class Func>
 		void initialize_transform(const inplace_free_list<U, Capacity>& other, Func&& func)
 		{
+			using other_offset_accessor = const typename inplace_free_list<U, Capacity>::offset_accessor;
+
 			first_free_ = other.first_free_;
 			size_ = other.size_;
 
-			if constexpr (std::is_trivially_copy_constructible_v<T>)
+			std::bitset<Capacity> mask;
+			const other_offset_accessor* other_begin = reinterpret_cast<const other_offset_accessor*>(std::data(other.storage_));
+			offset_accessor* begin = reinterpret_cast<offset_accessor*>(std::data(storage_));
+
+			for (offset_type i = first_free_; i != offset_type_npos; i = other_begin[i].offset)
 			{
-				storage_ = other.storage_;
+				mask.set(i);
+				std::construct_at(begin + i, *reinterpret_cast<const offset_accessor*>(other_begin + i));
 			}
-			else
+
+			for (std::size_t i{}; i < std::size(mask); ++i)
 			{
-				std::bitset<Capacity> mask;
-				const offset_accessor* other_begin = reinterpret_cast<const offset_accessor*>(std::data(other.storage_));
-				offset_accessor* begin = reinterpret_cast<offset_accessor*>(std::data(storage_));
-
-				for (offset_type i = first_free_; i != offset_type_npos; i = other_begin[i].offset)
+				if (mask.test(i) == false)
 				{
-					mask.set(i);
-					std::construct_at(begin + i, other_begin[i]);
-				}
-
-				for (std::size_t i{}; i < std::size(mask); ++i)
-				{
-					if (mask.test(i) == false)
-					{
-						std::construct_at(
-							reinterpret_cast<T*>(begin + i),
-							func(*reinterpret_cast<const U*>(other_begin + i))
-						);
-					}
+					std::construct_at(
+						reinterpret_cast<T*>(begin + i),
+						func(*reinterpret_cast<const U*>(other_begin + i))
+					);
 				}
 			}
 		}
