@@ -46,11 +46,30 @@ public:
 		expected[actual.as_index(ptr)] = v;
 	}
 
+	void insert_helper(std::map<const T*, T>& expected, inplace_free_list& actual)
+	{
+		auto v = random_value();
+		auto ptr = actual.emplace(v);
+
+		EXPECT_TRUE(ptr != nullptr);
+
+		EXPECT_FALSE(expected.contains(ptr)) << "Object inserted into same place twice.\n";
+
+		expected[ptr] = v;
+	}
+
 	void erase_helper(std::map<std::size_t, T>& expected, inplace_free_list& actual, const T* ptr)
 	{
 		auto idx = actual.as_index(ptr);
 		EXPECT_TRUE(expected.contains(idx));
 		expected.erase(idx);
+		actual.erase(ptr);
+	}
+
+	void erase_helper(std::map<const T*, T>& expected, inplace_free_list& actual, const T* ptr)
+	{
+		EXPECT_TRUE(expected.contains(ptr));
+		expected.erase(ptr);
 		actual.erase(ptr);
 	}
 
@@ -68,6 +87,23 @@ public:
 		for(std::size_t i = {}; i < v.size() / 2; ++i)
 		{
 			erase_helper(expected, actual, actual.at(v[i].first));
+		}
+	}
+
+	void fill_random_diffuse(std::map<const T*, T>& expected, inplace_free_list& actual)
+	{
+		while (std::size(expected) < actual.capacity())
+		{
+			insert_helper(expected, actual);
+		}
+
+		// Pick random to delete
+		auto v = std::vector<std::pair<const T*, T>>(std::begin(expected), std::end(expected));
+		std::shuffle(std::begin(v), std::end(v), random_engine);
+
+		for (std::size_t i = {}; i < v.size() / 2; ++i)
+		{
+			erase_helper(expected, actual, v[i].first);
 		}
 	}
 
@@ -526,4 +562,72 @@ TYPED_TEST(inplace_free_list_test, raii)
 	}
 
 	EXPECT_EQ(u.use_count(), 1);
+}
+
+TYPED_TEST(inplace_free_list_test, sort)
+{
+	using inplace_free_list = typename TestFixture::inplace_free_list;
+	inplace_free_list v;
+	std::map<std::size_t, typename inplace_free_list::value_type> expected;
+	TestFixture::fill_random_diffuse(expected, v);
+	
+	EXPECT_FALSE(v.is_free_list_sorted());
+	
+	v.sort_free_list();
+	
+	EXPECT_TRUE(v.is_free_list_sorted());
+	
+	for (auto e : expected)
+	{
+		EXPECT_TRUE(v.holds_value_at(e.first));
+		EXPECT_EQ(e.second, *v.at(e.first));
+	}
+}
+
+TYPED_TEST(inplace_free_list_test, optimize_at)
+{
+	using inplace_free_list = typename TestFixture::inplace_free_list;
+	inplace_free_list v;
+	std::map<std::size_t, typename inplace_free_list::value_type> expected;
+	TestFixture::fill_random_diffuse(expected, v);
+	auto cb = [&](inplace_free_list::size_type from, inplace_free_list::size_type to) {
+		auto e = std::make_pair(to, (*expected.find(from)).second);
+		e.first = to;
+		expected.erase(from);
+		expected.insert(e);
+		};
+
+	v.optimize_at(cb);
+
+	for (auto e : expected)
+	{
+		EXPECT_TRUE(v.holds_value_at(e.first));
+		EXPECT_EQ(e.second, *v.at(e.first));
+	}
+
+	EXPECT_TRUE(v.is_packed());
+}
+
+TYPED_TEST(inplace_free_list_test, optimize)
+{
+	using inplace_free_list = typename TestFixture::inplace_free_list;
+	inplace_free_list v;
+	std::map<typename inplace_free_list::value_type const*, typename inplace_free_list::value_type> expected;
+	TestFixture::fill_random_diffuse(expected, v);
+	auto cb = [&](typename inplace_free_list::value_type* from, typename inplace_free_list::value_type* to) {
+		auto e = std::make_pair(to, (*expected.find(from)).second);
+		e.first = to;
+		expected.erase(from);
+		expected.insert(e);
+		};
+
+	v.optimize(cb);
+
+	for (auto e : expected)
+	{
+		EXPECT_TRUE(v.holds_value(e.first));
+		EXPECT_EQ(e.second, *(e.first));
+	}
+
+	EXPECT_TRUE(v.is_packed());
 }

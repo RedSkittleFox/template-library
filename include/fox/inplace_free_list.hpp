@@ -117,6 +117,11 @@ namespace fox
 			return size_;
 		}
 
+		[[nodiscard]] offset_type first_free_offset() const noexcept
+		{
+			return first_free_;
+		}
+
 		[[nodiscard]] bool empty() const noexcept
 		{
 			return size() == 0;
@@ -127,11 +132,104 @@ namespace fox
 			return first_free_ == offset_type_npos;
 		}
 
+		[[nodiscard]] bool is_free_list_sorted() const
+		{
+			offset_type current = first_free_;
+			while (current != offset_type_npos)
+			{
+				offset_type next = reinterpret_cast<const offset_accessor*>(std::data(storage_))[current].offset;
+				if (next <= current) return false;
+				current = next;
+			}
+			return true;
+		}
+
 	public:
 		void clear() noexcept
 		{
 			destroy_all();
 			initialize_empty();
+		}
+
+		template<std::invocable<pointer, pointer> Callback>
+		void optimize(Callback&& cb)
+		{
+			optimize_at([&](size_type from, size_type to) { cb(this->data() + from, this->data() + to); });
+		}
+
+		template<std::invocable<size_type, size_type> Callback>
+		void optimize_at(Callback&& cb)
+		{
+			std::bitset<Capacity> mask = free_mask();
+			offset_type left = 0;
+			offset_type right = static_cast<offset_type>(Capacity - 1);
+			while (left < right)
+			{
+				if (mask.test(left))
+				{
+					if (mask.test(right))
+					{
+						reinterpret_cast<offset_accessor*>(std::data(storage_))[right].offset = right + 1;
+						right--;
+					}
+					else
+					{
+						T* source = reinterpret_cast<T*>(std::data(storage_)) + right;
+						T* dest = reinterpret_cast<T*>(std::data(storage_)) + left;
+						std::construct_at(dest, std::move(*source));
+						std::construct_at(reinterpret_cast<offset_accessor*>(std::data(storage_)) + right, static_cast<offset_type>(right + 1));
+
+						cb(right, left);
+
+						mask.reset(left);
+						mask.set(right);
+						first_free_ = right;
+					}
+
+				}
+				else
+				{
+					left++;
+				}
+			}
+
+			if (right >= 0 && mask.test(right))
+			{
+				first_free_ = right;
+				reinterpret_cast<offset_accessor*>(std::data(storage_))[right].offset = right + 1;
+			}
+
+			if (mask.test(Capacity - 1))
+			{
+				reinterpret_cast<offset_accessor*>(std::data(storage_))[Capacity - 1].offset = offset_type_npos;
+			}
+		}
+
+		void sort_free_list() {
+			std::bitset<Capacity> mask = free_mask();
+			offset_type next_offset = offset_type_npos;
+			for (offset_type idx = 0; idx < Capacity; idx++)
+			{
+				offset_type rev_idx = Capacity - idx - 1;
+				if (mask.test(rev_idx))
+				{
+					reinterpret_cast<offset_accessor*>(std::data(storage_))[rev_idx].offset = next_offset;
+					next_offset = static_cast<offset_type>(rev_idx);
+				}
+			}
+			first_free_ = next_offset;
+		}
+
+
+		bool is_packed()
+		{
+			auto mask = free_mask();
+			std::size_t i = 0;
+			for (; i < mask.size(); ++i)
+			{
+				if (mask.test(i)) break;
+			}
+			return i == this->size();
 		}
 
 		[[nodiscard]] std::bitset<Capacity> free_mask() const noexcept
