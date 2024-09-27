@@ -124,9 +124,105 @@ namespace fox
 			chunks_.clear();
 		}
 
-		void optimize()
+		template<std::invocable<pointer, pointer> Callback>
+		void optimize(Callback&& cb)
 		{
+			optimize_at([&](size_type from, size_type to) {
 
+				auto [chunk_from, from_offset] = unpack_index(from);
+				auto [chunk_to, to_offset] = unpack_index(to);
+
+				cb((std::data(chunks_)[chunk_from])->data() + from_offset,
+					(std::data(chunks_)[chunk_to])->data() + to_offset);
+				});
+		}
+
+		template<std::invocable<size_type, size_type> Callback>
+		void optimize_at(Callback&& cb)
+		{
+			std::uint16_t chunk_i = 0;
+			std::uint16_t chunk_j = static_cast<std::uint16_t>(chunks_.size() - 1);
+			while (chunk_i <= chunk_j && chunk_j > 0)
+			{
+				if (chunks_[chunk_i].size() == ChunkCapacity)
+				{
+					chunk_i++;
+					continue;
+				}
+
+				chunks_[chunk_i].sort_free_list();
+
+				if (chunk_i == chunk_j)
+				{
+					chunks_[chunk_i].optimize_at([&](std::uint16_t from, std::uint16_t to) {
+						cb(pack_index(chunk_i, from), pack_index(chunk_i, to));
+						});
+					break;
+				}
+				else
+				{
+					for (std::uint16_t idx = 0; idx < ChunkCapacity; idx++)
+					{
+						std::uint16_t rev_idx = ChunkCapacity - idx - 1;
+
+						if (chunks_[chunk_j].holds_value_at(rev_idx) && !chunks_[chunk_i].full())
+						{
+
+							const T* source = chunks_[chunk_j].at(rev_idx);
+							size_type packed_from = pack_index(chunk_j, rev_idx);
+
+							const T* dest = chunks_[chunk_i].emplace(*source);
+							std::uint16_t dest_idx = static_cast<std::uint16_t>(chunks_[chunk_i].as_index(dest));
+							size_type packed_to = pack_index(chunk_i, dest_idx);
+
+							chunks_[chunk_j].erase(source);
+
+							cb(packed_from, packed_to);
+						}
+					}
+
+					if (chunks_[chunk_i].full())
+						chunk_i++;
+
+					if (chunks_[chunk_j].empty())
+						chunk_j--;
+
+				}
+			}
+			shrink();
+		}
+
+		void shrink() {
+			while (chunks_.back().empty())
+			{
+				chunks_.pop_back();
+			}
+			chunks_.shrink_to_fit();
+		}
+
+		void sort_free_list() {
+			for (auto& chunk : chunks_)
+			{
+				chunk.sort_free_list();
+			}
+		}
+		
+		[[nodiscard]] bool is_free_list_sorted() const noexcept
+		{
+			for (auto& chunk : chunks_)
+			{
+				if (!chunk.is_free_list_sorted()) return false;
+			}
+			return true;
+		}
+
+		[[nodiscard]] bool is_packed()
+		{
+			for (auto& chunk : chunks_)
+			{
+				if (!chunk.is_packed()) return false;
+			}
+			return true;
 		}
 
 		template<class... Args>
