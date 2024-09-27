@@ -177,6 +177,7 @@ namespace fox
 						T* source = reinterpret_cast<T*>(std::data(storage_)) + right;
 						T* dest = reinterpret_cast<T*>(std::data(storage_)) + left;
 						std::construct_at(dest, std::move(*source));
+						std::destroy_at(source);
 						std::construct_at(reinterpret_cast<offset_accessor*>(std::data(storage_)) + right, static_cast<offset_type>(right + 1));
 
 						cb(right, left);

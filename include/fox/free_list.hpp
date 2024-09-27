@@ -200,14 +200,14 @@ namespace fox
 			chunks_.shrink_to_fit();
 		}
 
-		void sort() {
+		void sort_free_list() {
 			for (auto& chunk : chunks_)
 			{
 				chunk.sort_free_list();
 			}
 		}
 		
-		[[nodiscard]] bool is_sorted() const noexcept
+		[[nodiscard]] bool is_free_list_sorted() const noexcept
 		{
 			for (auto& chunk : chunks_)
 			{
