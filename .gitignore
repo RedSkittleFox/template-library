@@ -42,4 +42,3 @@ build
 *.exe
 *.out
 *.app
-/out/install/x64-Debug
